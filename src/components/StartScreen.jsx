@@ -8,7 +8,8 @@ const StartScreen = () => {
   const [score, setScore] = useState(0);
   const [userName, setUserName] = useState("");
   const [quizFinished, setQuizFinished] = useState(false);
-  const [userAnswers, setUserAnswers] = useState([]);
+  const [wrongAnswers, setWrongAnswers] = useState([]);
+
   const question = questions[currentQuestionIndex];
 
   const startQuiz = () => {
@@ -16,23 +17,19 @@ const StartScreen = () => {
   };
 
   const handleAnswerClick = (answer) => {
-    const isCorrect = answer === question.correctAnswer;
-    if (isCorrect) {
+    if (answer === question.correctAnswer) {
       setScore(score + 1);
+    } else {
+      setWrongAnswers([
+        ...wrongAnswers,
+        {
+          question: question.question,
+          yourAnswer: answer,
+          correctAnswer: question.correctAnswer,
+        },
+      ]);
     }
 
-    // Kullanıcının cevabını kaydet
-    setUserAnswers([
-      ...userAnswers,
-      {
-        question: question.question,
-        userAnswer: answer,
-        correctAnswer: question.correctAnswer,
-        isCorrect,
-      },
-    ]);
-
-    // Sonraki soruya geç
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
@@ -46,7 +43,7 @@ const StartScreen = () => {
     setScore(0);
     setQuizFinished(false);
     setUserName("");
-    setUserAnswers([]);
+    setWrongAnswers([]);
   };
 
   const renderQuestion = () => {
@@ -72,42 +69,10 @@ const StartScreen = () => {
     }
   };
 
-  const renderResults = () => (
-    <>
-      <h2>Quiz Finished!</h2>
-      <p>
-        {userName}, you got {score} out of {questions.length} right.
-      </p>
-      <div className="results">
-        {userAnswers.map((entry, index) => (
-          <div
-            key={index}
-            className={`result-item ${entry.isCorrect ? "correct" : "wrong"}`}
-          >
-            <p>
-              <strong>Q:</strong> {entry.question}
-            </p>
-            <p>
-              <strong>Your Answer:</strong> {entry.userAnswer}
-            </p>
-            {!entry.isCorrect && (
-              <p>
-                <strong>Correct Answer:</strong> {entry.correctAnswer}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-      <button className="start-btn" onClick={resetQuiz}>
-        Go Back to Start
-      </button>
-    </>
-  );
-
   return (
     <div className="start-screen">
       <div className="container">
-        <h1>Welcome to the Quiz App</h1>
+        {!quizStarted && <h1>Welcome to the Quiz App</h1>}
 
         {!quizStarted ? (
           <>
@@ -124,7 +89,35 @@ const StartScreen = () => {
             </button>
           </>
         ) : quizFinished ? (
-          renderResults()
+          <>
+            <h2>Quiz Finished!</h2>
+            <p>
+              {userName}, you got {score} out of {questions.length} points.
+            </p>
+
+            {wrongAnswers.length > 0 && (
+              <div className="wrong-answers">
+                <h3>Incorrect Answers</h3>
+                <ul>
+                  {wrongAnswers.map((item, index) => (
+                    <li key={index}>
+                      <strong>Q:</strong> {item.question}
+                      <br />
+                      <span className="wrong">Your Answer:</span>{" "}
+                      {item.yourAnswer}
+                      <br />
+                      <span className="correct">Correct Answer:</span>{" "}
+                      {item.correctAnswer}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <button className="start-btn" onClick={resetQuiz}>
+              Go Back to Start
+            </button>
+          </>
         ) : (
           renderQuestion()
         )}
